@@ -1,0 +1,38 @@
+Faq:
+  Type: AWS::DynamoDB::Table
+  Properties:
+    TableName: Faq-${self:provider.stage}
+    BillingMode: PAY_PER_REQUEST
+    AttributeDefinitions:
+      - AttributeName: id
+        AttributeType: S
+      - AttributeName: userId
+        AttributeType: S
+      - AttributeName: date
+        AttributeType: S
+      - AttributeName: companyId
+        AttributeType: S
+    KeySchema:
+      - AttributeName: id
+        KeyType: HASH
+    GlobalSecondaryIndexes:
+      - IndexName: GSI1
+        KeySchema:
+          - AttributeName: userId
+            KeyType: HASH
+          - AttributeName: date
+            KeyType: RANGE
+        Projection:
+          ProjectionType: ALL
+      - IndexName: GSI2
+        KeySchema:
+          - AttributeName: userId
+            KeyType: HASH
+        Projection:
+          ProjectionType: ALL
+      - IndexName: GSI3
+        KeySchema:
+          - AttributeName: companyId
+            KeyType: HASH
+        Projection:
+          ProjectionType: ALL

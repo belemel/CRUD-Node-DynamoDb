@@ -1,0 +1,213 @@
+service: INFINITY-FAQ-DEV
+plugins:
+  - serverless-bundle
+  - serverless-pseudo-parameters
+  - serverless-domain-manager
+provider:
+  name: aws
+  runtime: nodejs14.x
+  memorySize: 256
+  stage: ${opt:stage, 'dev'}
+  region: sa-east-1
+  profile: default
+  environment:
+    FAQ_TABLE: ${self:custom.Faq.name}
+  iamRoleStatements:
+    - ${file(iam/FaqIAM.yml):FaqIAM}
+package:
+  individually: true
+resources:
+  Resources:
+    Faq: ${file(resources/FaqTable.yml):Faq}
+functions:
+  create:
+    handler: src/handlers/create.handler
+    events:
+      - http:
+          path: /create
+          method: POST
+          cors:
+            origin: '*'
+            headers: ${self:custom.allowed-headers}
+            methods:
+              - OPTIONS
+              - POST
+            allowCredentials: false
+          authorizer: # <-- ATTENTION: THIS METHOD IS REQUIRED ANY FUNCTIONS, BECAUSE THIS SEND A AUTH (AFTER) A COOKIE IN ALL REQUEST
+            arn: ${self:custom.authorizer}
+            identitySource: method.request.header.TK-PROJECT, method.request.header.TK-USER
+            type: request
+            resultTtlInSeconds: 0
+  updated:
+    handler: src/handlers/updated.handler
+    events:
+      - http:
+          path: /{id}/update
+          method: PUT
+          cors:
+            origin: '*'
+            headers: ${self:custom.allowed-headers}
+            methods:
+              - OPTIONS
+              - PUT
+            allowCredentials: false
+          authorizer:
+            arn: ${self:custom.authorizer}
+            identitySource: method.request.header.TK-PROJECT, method.request.header.TK-USER
+            type: request
+            resultTtlInSeconds: 0
+  deleted:
+    handler: src/handlers/deleted.handler
+    events:
+      - http:
+          path: /{id}/delete
+          method: DELETE
+          cors:
+            origin: '*'
+            headers: ${self:custom.allowed-headers}
+            methods:
+              - OPTIONS
+              - DELETE
+            allowCredentials: false
+          authorizer:
+            arn: ${self:custom.authorizer}
+            identitySource: method.request.header.TK-PROJECT, method.request.header.TK-USER
+            type: request
+            resultTtlInSeconds: 0
+  getAllPost:
+    handler: src/handlers/getAllPost.handler
+    events:
+      - http:
+          path: /post/
+          method: GET
+          cors:
+            origin: '*'
+            headers: ${self:custom.allowed-headers}
+            methods:
+              - OPTIONS
+              - GET
+            allowCredentials: false
+          authorizer:
+            arn: ${self:custom.authorizer}
+            identitySource: method.request.header.TK-PROJECT, method.request.header.TK-USER
+            type: request
+            resultTtlInSeconds: 0
+  getOne:
+    handler: src/handlers/getOne.handler
+    events:
+      - http:
+          path: /{id}/getOne
+          method: GET
+          cors:
+            origin: '*'
+            headers: ${self:custom.allowed-headers}
+            methods:
+              - OPTIONS
+              - GET
+            allowCredentials: false
+          authorizer:
+            arn: ${self:custom.authorizer}
+            identitySource: method.request.header.TK-PROJECT, method.request.header.TK-USER
+            type: request
+            resultTtlInSeconds: 0
+  getPagination:
+    handler: src/handlers/getPagination.handler
+    events:
+      - http:
+          path: /getPagination/{number} 
+          method: POST
+          cors:
+            origin: '*'
+            headers: ${self:custom.allowed-headers}
+            methods:
+              - OPTIONS
+              - POST
+            allowCredentials: false
+          authorizer:
+            arn: ${self:custom.authorizer}
+            identitySource: method.request.header.TK-PROJECT, method.request.header.TK-USER
+            type: request
+            resultTtlInSeconds: 0
+  getSearch:
+    handler: src/handlers/getSearch.handler
+    events:
+      - http:
+          path: /getSearch/{string}
+          method: POST
+          cors:
+            origin: '*'
+            headers: ${self:custom.allowed-headers}
+            methods:
+              - OPTIONS
+              - POST
+            allowCredentials: false
+          authorizer:
+            arn: ${self:custom.authorizer}
+            identitySource: method.request.header.TK-PROJECT, method.request.header.TK-USER
+            type: request
+            resultTtlInSeconds: 0
+  getPages:
+    handler: src/handlers/getPages.handler
+    events:
+      - http:
+          path: /getPages/
+          method: POST
+          cors:
+            origin: '*'
+            headers: ${self:custom.allowed-headers}
+            methods:
+              - OPTIONS
+              - POST
+            allowCredentials: false
+          authorizer:
+            arn: ${self:custom.authorizer}
+            identitySource: method.request.header.TK-PROJECT, method.request.header.TK-USER
+            type: request
+            resultTtlInSeconds: 0
+  uploadImage:
+    handler: src/handlers/uploadImage.handler
+    events:
+      - http:
+          path: /uploadImage/
+          method: POST
+          cors:
+            origin: '*'
+            headers: ${self:custom.allowed-headers}
+            methods:
+              - OPTIONS
+              - POST
+            allowCredentials: false
+          authorizer:
+            arn: ${self:custom.authorizer}
+            identitySource: method.request.header.TK-PROJECT, method.request.header.TK-USER
+            type: request
+            resultTtlInSeconds: 0         
+custom:
+  authorizer: arn:aws:lambda:#{AWS::Region}:#{AWS::AccountId}:function:AUTH-ROUTES-AFTER-LOGIN-PROD-${self:provider.stage}-auth
+  allowed-headers:
+    - Content-Type
+    - X-Amz-Date
+    - Authorization
+    - X-Api-Key
+    - X-Amz-Security-Token
+    - X-Amz-User-Agent
+    - TK-PROJECT
+    - TK-USER
+    - Access-Control-Allow-Headers
+    - Access-Control-Allow-Origin
+  Faq:
+    name: !Ref Faq
+    arn: !GetAtt Faq.Arn
+  EndPoint:
+    version: v1
+    name: faq
+    domain: api.nbapp.dev.br
+  customDomain:
+    domainName: ${self:custom.EndPoint.domain}
+    certificateName: ${self:custom.EndPoint.domain}
+    basePath: ${self:provider.stage}/${self:custom.EndPoint.version}/${self:custom.EndPoint.name}
+    stage: ${self:provider.stage}
+    endpointType: regional
+    securityPolicy: tls_1_2
+    apiType: rest
+    createRoute53Record: false

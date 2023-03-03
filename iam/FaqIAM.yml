@@ -1,0 +1,15 @@
+FaqIAM:
+  Effect: Allow
+  Action: 
+    - dynamodb:GetItem
+    - dynamodb:PutItem
+    - dynamodb:DeleteItem
+    - dynamodb:UpdateItem 
+    - dynamodb:BatchGetItem
+    - dynamodb:Query
+    - dynamodb:Scan
+  Resource: 
+    - ${self:custom.Faq.arn}
+    - !Join ['/', ['${self:custom.Faq.arn}', 'index', 'GSI1']]
+    - !Join ['/', ['${self:custom.Faq.arn}', 'index', 'GSI2']]
+    - !Join ['/', ['${self:custom.Faq.arn}', 'index', 'GSI3']]
